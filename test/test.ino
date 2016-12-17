@@ -15,7 +15,6 @@
 #include <SoftwareSerial.h>
 #include "Adafruit_FONA.h"
 #include "ATT_MQTT.h"
-#include "ATT_MQTT_SIM800.h"
 
 #include "ATT_IOT_GPRS.h"
 #include <SPI.h>                //required to have support for signed/unsigned long type.
@@ -68,12 +67,10 @@ int ledPin = 2;                                             // Pin 8 is the LED 
 //required for the device
 void callback(char* topic, byte* payload, unsigned int length);
 // Setup the FONA MQTT class by passing in the FONA class and MQTT server and login details.
-Adafruit_FONA fona = Adafruit_FONA(FONA_RST);
-ATT_MQTT_SIM800 mqtt(&fona, mqttServer, 1883);
+
 
 void setup()
 {
-	mqtt.setCallback(callback);
 	pinMode(ledPin, OUTPUT);                                  // initialize the digital pin as an output.         
 	fonaSS.begin(19200); // if you're using software serial
 	Serial.begin(57600);                                       // init serial link for debugging
@@ -81,7 +78,7 @@ void setup()
 	while (!Serial){}											//block if the serial connection is not open ==>> ONLY FOR DEBUGGING
   
   
-	while (! Device.InitGPRS(&fona, FONA_APN, FONA_USERNAME, FONA_PASSWORD)) {
+	while (! Device.InitGPRS(fonaSS, FONA_RST, F(FONA_APN), F(FONA_USERNAME), F(FONA_PASSWORD))) {
 		Serial.println("Retrying FONA");
 	}
 	Serial.println(F("Connected to Cellular!"));
@@ -91,7 +88,7 @@ void setup()
 		Serial.println("retrying");
 	Device.AddAsset(knobPin, "knob", "rotary switch",false, "{\"type\": \"integer\", \"minimum\": 0, \"maximum\": 1023}");
 	Device.AddAsset(ledPin, "led", "light emitting diode", true, "boolean");
-	while(!Device.Subscribe(mqtt))                          // make certain that we can receive message from the iot platform (activate mqtt)
+	while(!Device.Subscribe(callback, mqttServer, 1883))                          // make certain that we can receive message from the iot platform (activate mqtt)
 		Serial.println("retrying"); 
 }
 

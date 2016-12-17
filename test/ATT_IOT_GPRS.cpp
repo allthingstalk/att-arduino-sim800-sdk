@@ -21,10 +21,9 @@
 
 
 #include "ATT_IOT_GPRS.h"
+#include "ATT_MQTT_SIM800.h"
 
 #define RETRYDELAY 5000					//the nr of milliseconds that we pause before retrying to create the connection
-#define ETHERNETDELAY 1000		//the nr of milliseconds that we pause to give the ethernet board time to start
-#define MQTTPORT 1883
 
 #ifdef DEBUG
 char HTTPSERVTEXT[] = "connection HTTP Server";
@@ -41,12 +40,13 @@ ATTDevice::ATTDevice(String deviceId, String clientId, String clientKey): _fona(
 	_clientKey = clientKey;
 }
 
-bool ATTDevice::InitGPRS(Adafruit_FONA* fona, const char *apn, const char *username, const char *password)
+bool ATTDevice::InitGPRS(SoftwareSerial& fonaSS, int8_t rst, FONAFlashStringPtr apn, FONAFlashStringPtr username, FONAFlashStringPtr password)
 {
-	_fona = fona;
+	_fona = new Adafruit_FONA(rst);
 	_apn = apn;
 	_apnPwd = password;
 	_apnUser = username;
+	_fonaSS = &fonaSS;
 	return _initGprs();
 }
 
@@ -55,21 +55,21 @@ bool ATTDevice::_initGprs()
 	Serial.println(F("Initializing FONA....(May take 3 seconds)"));
 	
   
-	if (! _fona->begin(fonaSS)) {           // can also try fona.begin(Serial1) 
+	if (! _fona->begin(*_fonaSS)) {           // can also try fona.begin(Serial1) 
 		Serial.println(F("Couldn't find FONA"));
 		return false;
 	}
 	Serial.println(F("FONA is OK"));
 	Serial.println(F("Checking for network..."));
-	while (fona.getNetworkStatus() != 1) {
+	while (_fona->getNetworkStatus() != 1) {
 		delay(500);
 	}
-	fona.setGPRSNetworkSettings(apn, username, password);
-	fona.enableGPRS(false);						//reset first
+	_fona->setGPRSNetworkSettings(_apn, _apnUser, _apnPwd);
+	_fona->enableGPRS(false);						//reset first
 	delay(2000);
 	
 	Serial.println(F("Enabling GPRS"));
-	if (!fona.enableGPRS(true)) {
+	if (!_fona->enableGPRS(true)) {
 		Serial.println(F("Failed to turn GPRS on"));  
 		return false;
 	}
@@ -99,7 +99,7 @@ bool ATTDevice::Connect(char httpServer[])
 		Serial.print(HTTPSERVTEXT);
 		Serial.println(SUCCESTXT);
 		#endif
-		delay(ETHERNETDELAY);							// another small delay: sometimes the card is not yet ready to send the asset info.
+		delay(1000);							// another small delay: sometimes the card is not yet ready to send the asset info.
 		return true;									//we have created a connection succesfully.
 	}
 }
@@ -201,13 +201,12 @@ void ATTDevice::AddAsset(int id, String name, String description, bool isActuato
 	
 }
 
-//connect with the http server and broker
-bool ATTDevice::Subscribe(ATT_MQTT_SIM800& mqttclient)
+bool ATTDevice::Subscribe(MQTT_CALLBACK_SIGNATURE, const char* server, uint16_t port)
 {
 	Serial.println("subscribing");
 	if(_clientId && _clientKey){
 		String brokerId = _clientId + ":" + _clientId;
-		return Subscribe(mqttclient, brokerId.c_str(), _clientKey.c_str());
+		return Subscribe(callback, brokerId.c_str(), _clientKey.c_str(), server, port);
 	}
 	else{
 		#ifdef DEBUG
@@ -221,9 +220,10 @@ bool ATTDevice::Subscribe(ATT_MQTT_SIM800& mqttclient)
 /*Stop http processing & make certain that we can receive data from the mqtt server, given the specified username and pwd.
   This Subscribe function can be used to connect to a fog gateway
 returns true when successful, false otherwise*/
-bool ATTDevice::Subscribe(ATT_MQTT_SIM800& mqttclient, const char* username, const char* pwd)
+bool ATTDevice::Subscribe(MQTT_CALLBACK_SIGNATURE, const char* username, const char* pwd, const char* server, uint16_t port)
 {
-	_mqttclient = &mqttclient;	
+	_mqttclient = new ATT_MQTT_SIM800(_fona, server, port);	
+	_mqttclient->setCallback(callback);
 	//_serverName = "";					//no longer need this reference.
 	CloseHTTP();
 	_mqttUserName = username;
@@ -308,7 +308,7 @@ char* ATTDevice::BuildContent(String value)
 
 
 //send a data value to the cloud server for the sensor with the specified id.
-void ATTDevice::Send(String value, int id)
+bool ATTDevice::Send(String value, int id)
 {
 	if(_mqttclient->connected() == false)
 	{

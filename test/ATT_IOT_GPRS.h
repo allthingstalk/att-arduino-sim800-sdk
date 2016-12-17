@@ -24,6 +24,9 @@ Original author: Peter Leemans (2014)
 #include <Client.h>
 #include "ATT_MQTT_SIM800.h"
 #include <string.h>
+#include <SoftwareSerial.h>
+
+#define MQTTPORT 1883
 
 //this class represents the ATT cloud platform.
 class ATTDevice
@@ -32,7 +35,8 @@ class ATTDevice
 		//create the object
 		ATTDevice(String deviceId, String clientId, String clientKey);
 		
-		bool InitGPRS(Adafruit_FONA* fona, const char *apn, const char *username, const char *password);
+		//rst: the pin number for doing a reset (if any)
+		bool InitGPRS(SoftwareSerial& fonaSS, int8_t rst, FONAFlashStringPtr apn, FONAFlashStringPtr username, FONAFlashStringPtr password);
 		
 		/*connect with the http server (call first)
 		-fona: the object representing the fona modem.
@@ -46,9 +50,9 @@ class ATTDevice
 
 		/*Stop http processing & make certain that we can receive data from the mqtt server. 
 		returns true when successful, false otherwise*/
-		bool Subscribe(ATT_MQTT_SIM800& mqttclient);
+		bool Subscribe(MQTT_CALLBACK_SIGNATURE, const char* server, uint16_t port=MQTTPORT);
 		
-		bool Subscribe(ATT_MQTT_SIM800& mqttclient, const char* username, const char* pwd);
+		bool Subscribe(MQTT_CALLBACK_SIGNATURE, const char* username, const char* pwd, const char* server, uint16_t port=MQTTPORT);
 		
 		//send a data value to the cloud server for the sensor with the specified id.
 		//returns true upon success.
@@ -87,14 +91,16 @@ class ATTDevice
 		bool _initGprs();
 		
 		ATT_MQTT_SIM800* _mqttclient;		//provides mqtt support (placed as protected, so we can build inheriters that can access the mqtt client directly (ex: network watchdog)
+		SoftwareSerial* _fonaSS;				//ref to the soft serial port of the modem
+		
 		
 		//tries to create a connection with the mqtt broker. also used to try and reconnect.
 		bool MqttConnect();				//so inheriters can reconnect with the mqtt server if they detect a network loss.
 		String _deviceId;				//the device id provided by the user.
 		String _clientId;				//the client id provided by the user.
-		String _apn;					//for fona network
-		String _apnUser;				//username for gprs
-		String _apnPwd;					//pwd for gprs
+		FONAFlashStringPtr _apn;					//for fona network
+		FONAFlashStringPtr _apnUser;				//username for gprs
+		FONAFlashStringPtr _apnPwd;					//pwd for gprs
 };
 
 #endif
