@@ -116,7 +116,7 @@
   #define SUBSCRIPTIONDATALEN 100
 #endif
 
-#define MQTT_CALLBACK_SIGNATURE void (*callback)(char*,uint8_t*,unsigned int)
+#define MQTT_CALLBACK_SIGNATURE void (*callback)(const char*,const char*,unsigned int)
 
 
 
@@ -194,7 +194,7 @@ class ATT_MQTT {
   // an ATT_MQTT_Subscribe object which has a new message.  Should be called
   // in the sketch's loop function to ensure new messages are recevied.  Note
   // that subscribe should be called first for each topic that receives messages!
-  bool readSubscription(char** topic,  uint8_t* data, unsigned int& datalen, int16_t timeout=0);
+  bool readSubscription(char* topic,  char* data, unsigned int& datalen, int16_t timeout=0);
 
   void processPackets(int16_t timeout);
 

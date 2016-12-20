@@ -62,10 +62,10 @@ ATTDevice Device(deviceId, clientId, clientKey);            //create the object 
 #define mqttServer httpServer                				// MQTT Server Address 
 
 int knobPin = 1;                                            // Analog 0 is the input pin + identifies the asset on the cloud platform
-int ledPin = 2;                                             // Pin 8 is the LED output pin + identifies the asset on the cloud platform
+int ledPin = 4;                                             // Pin 8 is the LED output pin + identifies the asset on the cloud platform
 
 //required for the device
-void callback(char* topic, byte* payload, unsigned int length);
+void callback(const char* topic, const char* payload, unsigned int length);
 // Setup the FONA MQTT class by passing in the FONA class and MQTT server and login details.
 
 
@@ -111,16 +111,11 @@ void loop()
 
 
 // Callback function: handles messages that were sent from the iot platform to this device.
-void callback(char* topic, byte* payload, unsigned int length) 
+void callback(const char* topic, const char* payload, unsigned int length) 
 { 
-  String msgString; 
-  {                                                     //put this in a sub block, so any unused memory can be freed as soon as possible, required to save mem while sending data
-    char message_buff[length + 1];                      //need to copy over the payload so that we can add a /0 terminator, this can then be wrapped inside a string for easy manipulation.
-    strncpy(message_buff, (char*)payload, length);      //copy over the data
-    message_buff[length] = '\0';                        //make certain that it ends with a null         
-    msgString = String(message_buff);
-  }
+  String msgString(payload); 
   int* idOut = NULL;
+  idOut = &ledPin;
   {                                                     //put this in a sub block, so any unused memory can be freed as soon as possible, required to save mem while sending data
     int pinNr = Device.GetPinNr(topic, strlen(topic));
     
@@ -128,6 +123,8 @@ void callback(char* topic, byte* payload, unsigned int length)
     Serial.println(msgString);
     Serial.print("topic: ");
     Serial.println(topic);
+	Serial.print("pin: ");
+    Serial.println(pinNr);
     
     if (pinNr == ledPin)       
     {
@@ -142,6 +139,7 @@ void callback(char* topic, byte* payload, unsigned int length)
 		}
     }
   }
+  
   if(idOut != NULL)                                     //also let the iot platform know that the operation was succesful: give it some feedback. This also allows the iot to update the GUI's correctly & run scenarios.
     Device.Send(msgString, *idOut);    
 }

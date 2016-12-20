@@ -1455,6 +1455,20 @@ uint16_t Adafruit_FONA::TCPread(uint8_t *buff, uint16_t len) {
 	return avail;
 }
 
+void Adafruit_FONA::TCPFlushPrint(uint16_t len) {
+	uint16_t avail;
+
+	mySerial->print(F("AT+CIPRXGET=2,"));
+	mySerial->println(len);
+	readline();
+	if (! parseReply(F("+CIPRXGET: 2,"), &avail, ',', 0)) return;
+	while(mySerial->available()){
+		int read = mySerial->read();
+		DEBUG_PRINT((char)read);
+	}
+	DEBUG_PRINTLN();
+}
+
 
 
 /********* HTTP LOW LEVEL FUNCTIONS  ************************************/

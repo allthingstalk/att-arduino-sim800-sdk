@@ -109,10 +109,11 @@ bool ATTDevice::Connect(char httpServer[])
 void ATTDevice::Close()
 {
 	CloseHTTP();
-	_mqttUserName = NULL;
-	_mqttpwd = NULL;
+	_mqttUserName = "";
+	_mqttpwd = "";
 	if(_mqttclient){
 		_mqttclient->disconnect();
+		delete _mqttclient;
 		_mqttclient = NULL;
 	}
 }
@@ -222,32 +223,37 @@ bool ATTDevice::Subscribe(MQTT_CALLBACK_SIGNATURE, const char* server, uint16_t 
 returns true when successful, false otherwise*/
 bool ATTDevice::Subscribe(MQTT_CALLBACK_SIGNATURE, const char* username, const char* pwd, const char* server, uint16_t port)
 {
-	_mqttclient = new ATT_MQTT_SIM800(_fona, server, port);	
-	_mqttclient->setCallback(callback);
-	//_serverName = "";					//no longer need this reference.
 	CloseHTTP();
+	_mqttServerName = server;
+	_mqttPort = port;
 	_mqttUserName = username;
 	_mqttpwd = pwd;
+	_mqttCallback = callback;
 	return MqttConnect();
 }
 
 //tries to create a connection with the mqtt broker. also used to try and reconnect.
 bool ATTDevice::MqttConnect()
 {
-	if (_mqttclient->connected()) 
-		return true;
+	if (_mqttclient){
+		if (_mqttclient->connected()) 
+			return true;
+		delete _mqttclient;														//we recreate the entire object.
+	}
+	_mqttclient = new ATT_MQTT_SIM800(_fona, _mqttServerName.c_str(), _mqttPort);		//we recreate the entire object upon reconnect cause otherwise it looses some info and has to reconnect all the time.
+	_mqttclient->setCallback(_mqttCallback);
  
 	char mqttId[23]; // Or something long enough to hold the longest file name you will ever use.
 	int length = _deviceId.length();
 	length = length > 22 ? 22 : length;
     _deviceId.toCharArray(mqttId, length);
 	mqttId[length] = 0;
-	if(_mqttUserName && _mqttpwd){
+	if(_mqttUserName.length() > 0 && _mqttpwd.length() > 0){
 		DEBUG_PRINT(F("unser: "));
 		DEBUG_PRINTLN(_mqttUserName);
 		DEBUG_PRINT(F("pwd: "));
 		DEBUG_PRINTLN(_mqttpwd);
-		_mqttclient->setCredentials(mqttId, _mqttUserName, _mqttpwd);
+		_mqttclient->setCredentials(mqttId, _mqttUserName.c_str(), _mqttpwd.c_str());
 		if (_mqttclient->connect() != 0) 
 		{
 			#ifdef DEBUG
@@ -283,7 +289,7 @@ bool ATTDevice::Process()
 		if(MqttConnect() == false)
 			return false;
 	}
-	_mqttclient->processPackets(100);
+	_mqttclient->processPackets(350);
 	return true;
 }
 
@@ -361,7 +367,7 @@ void ATTDevice::MqttSubscribe()
 }
 
 //returns the pin nr found in the topic
-int ATTDevice::GetPinNr(char* topic, int topicLength)
+int ATTDevice::GetPinNr(const char* topic, int topicLength)
 {
 	char digitOffset = 9;						//skip the '/command' at the end of the topic
 	int result = topic[topicLength - digitOffset] - 48; 		// - 48 to convert digit-char to integer

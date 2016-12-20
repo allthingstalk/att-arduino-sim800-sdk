@@ -359,16 +359,16 @@ bool ATT_MQTT::unsubscribe(const char* topic, uint8_t qos)
     return true;
 }
 
-void ATT_MQTT::setCallback(void(*callback)(char*,uint8_t*,unsigned int)){
+void ATT_MQTT::setCallback(void(*callback)(const char*,const char*,unsigned int)){
     this->callback = callback;
 }
 
 void ATT_MQTT::processPackets(int16_t timeout) 
 {
-	char *topic;
-	uint8_t data[SUBSCRIPTIONDATALEN];
+	char topic[MAXBUFFERSIZE];
+	char data[SUBSCRIPTIONDATALEN];
 	unsigned int data_len;
-	while (readSubscription(&topic, data, data_len, timeout)) {
+	while (readSubscription(topic, data, data_len, timeout)) {
 		Serial.println("**** sub packet received");
 		if(this->callback != NULL){
 			this->callback(topic, data, data_len);
@@ -376,22 +376,21 @@ void ATT_MQTT::processPackets(int16_t timeout)
 	}
 }
 
-bool ATT_MQTT::readSubscription(char** topic,  uint8_t* data, unsigned int& datalen, int16_t timeout) {
+bool ATT_MQTT::readSubscription(char* topic,  char* data, unsigned int& datalen, int16_t timeout) {
   uint16_t topiclen;
 
-  // Check if data is available to read.
-  uint16_t len = readFullPacket(buffer, MAXBUFFERSIZE, timeout); // return one full packet
-  if (!len)
-    return false;  // No data available, just quit.
-  DEBUG_PRINT("Packet len: "); DEBUG_PRINTLN(len); 
-  DEBUG_PRINTBUFFER(buffer, len);
-  *topic = (char*)buffer+4;
-
-  // Parse out length of packet.
-  topiclen = buffer[3];
-  DEBUG_PRINT(F("found topic len ")); DEBUG_PRINTLN(topiclen);
-
-  
+	// Check if data is available to read.
+	uint16_t len = readFullPacket(buffer, MAXBUFFERSIZE, timeout); // return one full packet
+	if (!len)
+		return false;  // No data available, just quit.
+	DEBUG_PRINT("Packet len: "); DEBUG_PRINTLN(len); 
+	DEBUG_PRINTBUFFER(buffer, len);
+	//*topic = (char*)buffer+4;
+	topiclen = buffer[3];
+	memset(topic, 0, MAXBUFFERSIZE);
+	memmove(topic, buffer+4, topiclen);
+	// Parse out length of packet.
+	DEBUG_PRINT(F("found topic len ")); DEBUG_PRINTLN(topiclen);
   
   uint8_t packet_id_len = 0;
   uint16_t packetid = 0;
@@ -415,7 +414,7 @@ bool ATT_MQTT::readSubscription(char** topic,  uint8_t* data, unsigned int& data
   DEBUG_PRINT(F("Data: ")); DEBUG_PRINTLN((char*)data);
   
   
-  memset(topic + topiclen, 0, 1);		//add null terminator to topic. at this point, data has been copied to different buffer, so this can be done fast.
+  DEBUG_PRINT(F("topic: ")); DEBUG_PRINTLN(*topic);
 
   if ((MQTT_PROTOCOL_LEVEL > 3) &&(buffer[0] & 0x6) == 0x2) {
     uint8_t ackpacket[4];

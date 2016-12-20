@@ -28,6 +28,8 @@ Original author: Peter Leemans (2014)
 
 #define MQTTPORT 1883
 
+#define MQTT_CALLBACK_SIGNATURE_FIELD void (*_mqttCallback)(const char*,const char*,unsigned int)
+
 //this class represents the ATT cloud platform.
 class ATTDevice
 {
@@ -67,14 +69,17 @@ class ATTDevice
 		bool Process();
 		
 		//returns the pin nr found in the topic
-		int GetPinNr(char* topic, int topicLength);
+		int GetPinNr(const char* topic, int topicLength);
 	private:	
 		String _serverName;				//stores the name of the http server that we should use.
 		String _clientKey;				//the client key provided by the user.
 		Adafruit_FONA* _fona;				//raw http communication. Possible to save some memory here: pass the client as a param in connect, put the object local in the setup function.
 		
-		const char* _mqttUserName;		//we store a local copy of the the mqtt username and pwd, so we can auto reconnect if the connection was lost.
-		const char* _mqttpwd;	
+		String _mqttUserName;		//we store a local copy of the the mqtt username and pwd, so we can auto reconnect if the connection was lost.
+		String _mqttpwd;				//to make certain that it is a local copy, we use String.
+		String _mqttServerName;
+		uint16_t _mqttPort;
+		MQTT_CALLBACK_SIGNATURE_FIELD;
 		
 		//subscribe to the mqtt topic so we can receive data from the server.
 		void MqttSubscribe();

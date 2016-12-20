@@ -76,6 +76,8 @@ class Adafruit_FONA : public FONAStreamType {
   int read(void);
   int peek(void);
   void flush();
+  
+  void TCPFlushPrint(uint16_t len);
 
   // FONA 3G requirements
   boolean setBaudrate(uint16_t baud);
