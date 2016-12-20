@@ -42,9 +42,9 @@
   - Make certain that the data type you used to create the asset is the expected data type. Ex, when you define the asset as 'int', don't send strings or boolean values.
 */
 
-#define deviceId "rswdURafZc1qPCmFmGwNnKl6"
-#define clientId "testjan"
-#define clientKey "5i4duakv2bq"
+#define deviceId ""
+#define clientId ""
+#define clientKey ""
 
 #define FONA_APN       "internet.be"
 #define FONA_USERNAME  ""
