@@ -77,7 +77,7 @@ bool ATTDevice::_initGprs()
 }
 
 //connect with the http server
-bool ATTDevice::Connect(char httpServer[])
+bool ATTDevice::Connect(const char* httpServer)
 {
 	_serverName = httpServer;					//keep track of this value while working with the http server.
 	

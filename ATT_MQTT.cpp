@@ -46,22 +46,22 @@ int strncasecmp(const char * str1, const char * str2, int len) {
 
 
 void printBuffer(uint8_t *buffer, uint16_t len) {
-  DEBUG_PRINTER.print('\t');
+  DebugStream.print('\t');
   for (uint16_t i=0; i<len; i++) {
     if (isprint(buffer[i]))
-      DEBUG_PRINTER.write(buffer[i]);
+      DebugStream.write(buffer[i]);
     else
-      DEBUG_PRINTER.print(" ");
-    DEBUG_PRINTER.print(F(" [0x"));
+      DebugStream.print(" ");
+    DebugStream.print(F(" [0x"));
     if (buffer[i] < 0x10)
-      DEBUG_PRINTER.print("0");
-    DEBUG_PRINTER.print(buffer[i],HEX);
-    DEBUG_PRINTER.print("], ");
+      DebugStream.print("0");
+    DebugStream.print(buffer[i],HEX);
+    DebugStream.print("], ");
     if (i % 8 == 7) {
-      DEBUG_PRINTER.print("\n\t");
+      DebugStream.print("\n\t");
     }
   }
-  DEBUG_PRINTER.println();
+  DebugStream.println();
 }
 
 /* Not used now, but might be useful in the future

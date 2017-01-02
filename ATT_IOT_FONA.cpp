@@ -16,7 +16,7 @@
  ****************************************************/
     // next line per http://postwarrior.com/arduino-ethershield-error-prog_char-does-not-name-a-type/
 
-#include "Adafruit_FONA.h"
+#include "ATT_IOT_FONA.h"
 
 
 

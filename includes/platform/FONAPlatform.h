@@ -32,13 +32,7 @@
 
 
 
-#ifndef DEBUG_PRINT
-// debug is disabled
-
-#define DEBUG_PRINT(...)
-#define DEBUG_PRINTLN(...)
-
-#endif
+#include "att_debug.h"
 
 
 #ifndef prog_char_strcmp

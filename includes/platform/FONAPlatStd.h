@@ -40,16 +40,7 @@
 #include <avr/pgmspace.h>
 
 
-// DebugStream	sets the Stream output to use
-// for debug (only applies when ADAFRUIT_FONA_DEBUG
-// is defined in config)
-#define DebugStream		Serial
-
-#ifdef ADAFRUIT_FONA_DEBUG
-// need to do some debugging...
-#define DEBUG_PRINT(...)		DebugStream.print(__VA_ARGS__)
-#define DEBUG_PRINTLN(...)		DebugStream.println(__VA_ARGS__)
-#endif
+#include "att_debug.h"
 
 // a few typedefs to keep things portable
 typedef	Stream 						FONAStreamType;

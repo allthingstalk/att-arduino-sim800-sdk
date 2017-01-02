@@ -14,8 +14,8 @@
   Written by Limor Fried/Ladyada for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
  ****************************************************/
-#ifndef ADAFRUIT_FONA_H
-#define ADAFRUIT_FONA_H
+#ifndef ATT_IOT_FONA_H
+#define ATT_IOT_FONA_H
 
 #include "includes/FONAConfig.h"
 #include "includes/FONAExtIncludes.h"

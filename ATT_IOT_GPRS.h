@@ -44,7 +44,7 @@ class ATTDevice
 		-fona: the object representing the fona modem.
 		-httpServer: the name of the http server to use, kept in memory until after calling 'Subscribe' 
 		returns: true when subscribe was successful, otherwise false.*/
-		bool Connect(char httpServer[]);
+		bool Connect(const char* httpServer);
 		
 		//create or update the specified asset. (call after connecting)
 		//note: after this call, the name will be in lower case, so that it can be used to compare with the topic of incomming messages.
