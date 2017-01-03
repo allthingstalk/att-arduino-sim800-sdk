@@ -4,7 +4,7 @@
 #define _DEBUG_H_
 
 // Uncomment/comment to turn on/off debug output messages.
-#define LIB_DEBUG
+//#define LIB_DEBUG
 // Uncomment/comment to turn on/off error output messages.
 //#define LIB_ERROR
 
