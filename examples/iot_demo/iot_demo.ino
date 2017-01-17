@@ -25,7 +25,6 @@
   ### Instructions
 
   1. Setup the Arduino hardware
-    - USB2Serial
     - Grove kit shield
     - Potentiometer to A1
     - Led light to D4
@@ -63,7 +62,7 @@ ATTDevice Device(deviceId, clientId, clientKey);            	//create the object
 
 //CAREFULL: don't use the same pins as used by the modem or things will start to crash
 int knobPin = 1;                                            	// Analog 1 is the input pin + identifies the asset on the cloud platform
-int ledPin = 4;                                             	// Pin 8 is the LED output pin + identifies the asset on the cloud platform
+int ledPin = 4;                                             	// Pin 4 is the LED output pin + identifies the asset on the cloud platform
 
 //required for the device
 void callback(const char* topic, const char* payload, unsigned int length);
@@ -76,7 +75,7 @@ void setup()
     fonaSS.begin(19200); 										// if you're using software serial
     Serial.begin(57600);                                        // init serial link for debugging
   
-	while(!Serial && millis() < 2000);                   		// Make sure you see all output on the monitor. After 1 sec, it will skip this step, so that the board can also work without being connected to a pc  
+	while(!Serial && millis() < 2000);                   		// Make sure you see all output on the monitor. After 2 sec, it will skip this step, so that the board can also work without being connected to a pc  
   
     while (! Device.InitGPRS(fonaSS, FONA_RST, F(FONA_APN), F(FONA_USERNAME), F(FONA_PASSWORD))) {
         Serial.println("Retrying FONA");
@@ -92,17 +91,17 @@ void setup()
         Serial.println("retrying"); 
 }
 
-unsigned long time;                                         //only send every x amount of time.
+unsigned long time;                                         	//only send every x amount of time.
 unsigned int prevVal =0;
 void loop()
 {
   unsigned long curTime = millis();
-  if (curTime > (time + 3000))                              // publish light reading every 5 seconds to sensor 1
+  if (curTime > (time + 3000))                              	// publish reading every 3 seconds to sensor knobPin
   {
-    unsigned int lightRead = analogRead(knobPin);           // read from light sensor (photocell)
-    if(prevVal != lightRead){
-      Device.Send(String(lightRead), knobPin);
-      prevVal = lightRead;
+    unsigned int knobRead = analogRead(knobPin);           		// read from sensor (knob)
+    if(prevVal != knobRead){
+      Device.Send(String(knobRead), knobPin);
+      prevVal = knobRead;
     }
     time = curTime;
   }
@@ -113,20 +112,20 @@ void loop()
 // Callback function: handles messages that were sent from the iot platform to this device.
 void callback(const char* topic, const char* payload, unsigned int length) 
 { 
-  String msgString(payload);                            //convert to string object, so we can easily compare and modify the string.
-  int* idOut = NULL;
-  idOut = &ledPin;
-  {                                                     //put this in a sub block, so any unused memory can be freed as soon as possible, required to save mem while sending data
-    int pinNr = Device.GetPinNr(topic, strlen(topic));
+	String msgString(payload);                            	//convert to string object, so we can easily compare and modify the string.
+	int* idOut = NULL;
+	idOut = &ledPin;
+  
+	int pinNr = Device.GetPinNr(topic, strlen(topic));
     
-    Serial.print("Payload: ");                          //show some debugging.
+	Serial.print("Payload: ");                          	//show some debugging.
     Serial.println(msgString);
     Serial.print("topic: ");
     Serial.println(topic);
     Serial.print("pin: ");
     Serial.println(pinNr);
     
-    if (pinNr == ledPin)       
+    if (pinNr == ledPin)       								//check for which asset we received an actuator so that we can perform the correct actuation.
     {
         msgString.toLowerCase();                            //to make certain that our comparison later on works ok (it could be that a 'True' or 'False' was sent)
         if (msgString == "false") {
@@ -138,8 +137,7 @@ void callback(const char* topic, const char* payload, unsigned int length)
             idOut = &ledPin;
         }
     }
-  }
   
-  if(idOut != NULL)                                     //also let the iot platform know that the operation was succesful: give it some feedback. This also allows the iot to update the GUI's correctly & run scenarios.
-    Device.Send(msgString, *idOut);    
+	if(idOut != NULL)                                     	//also let the iot platform know that the operation was succesful: give it some feedback. This also allows the iot to update the GUI's correctly & run scenarios.
+		Device.Send(msgString, *idOut);    
 }
