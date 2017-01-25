@@ -45,7 +45,7 @@
 #define clientId "your_client_id"
 #define clientKey "your_client_key"
 
-#define FONA_APN       "internet.be"
+#define FONA_APN       "web.pro.be"
 #define FONA_USERNAME  ""
 #define FONA_PASSWORD  ""
 
